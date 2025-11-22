@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import ProfileHeader from "@/components/profile/ProfileHeader";
-import StatsCards from "@/components/profile/StatsCards";
-import RecentActivity from "@/components/profile/RecentActivity";
-import AvatarSelectionModal from "@/components/profile/AvatarSelectionModal";
-import EditProfileModal from "@/components/profile/EditProfileModal";
-import SettingsModal from "@/components/profile/SettingsModal";
+import ProfileHeader from "@/app/components/ProfileHeader";
+import StatsCards from "@/app/components/StatsCards";
+import RecentActivity from "@/app/components/RecentActivity";
+import AvatarSelectionModal from "@/app/components/AvatarSelectionModal";
+import EditProfileModal from "@/app/components/EditProfileModal";
+import SettingsModal from "@/app/components/SettingsModal";
 
 export default function ProfilePage() {
   const availableAvatars = [
