@@ -4,16 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "seed": "tsx scripts/seed.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/mongoose": "^5.11.96",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.554.0",
+    "mongoose": "^9.0.0",
     "next": "16.0.3",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "tsx": "^4.20.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

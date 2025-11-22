@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Users, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import CoinBalance from "../components/CoinBalance";
@@ -8,6 +10,7 @@ import TabButton from "../components/DonateTabButton";
 import FriendCard from "../components/FriendCard";
 import CharityCard from "../components/CharityCard";
 import DonateModal from "../components/DonateModal";
+import { useUser, useDonations, useFriends } from "../lib/hooks";
 
 interface Charity {
   id: string;
@@ -17,53 +20,57 @@ interface Charity {
   totalDonations: number;
 }
 
-interface Friend {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
 export default function DonatePage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"friends" | "charities">(
     "friends"
   );
   const [showDonateModal, setShowDonateModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const [donationAmount, setDonationAmount] = useState(10);
-  const [availableCoins] = useState(82); // coins earned - coins donated
 
-  const friends: Friend[] = [
-    { id: "1", name: "Sarah Johnson", avatar: "🌟" },
-    { id: "2", name: "Mike Chen", avatar: "🚀" },
-    { id: "3", name: "Emma Davis", avatar: "💎" },
-    { id: "4", name: "John Smith", avatar: "⚡" },
-  ];
+  useEffect(() => {
+    // Get userId from localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      // Not logged in, redirect to login
+      router.push("/login");
+    } else {
+      setUserId(storedUserId);
+    }
+  }, [router]);
+
+  const { user, loading: userLoading, refetch: refetchUser } = useUser(userId || "");
+  const { createDonation, loading: donating } = useDonations(userId || "");
+  const { friends, loading: friendsLoading } = useFriends(userId || "");
+
+  const availableCoins = user?.digitalCoins || 0;
 
   const charities: Charity[] = [
     {
-      id: "1",
+      id: "ocean_cleanup",
       name: "Ocean Cleanup",
       description: "Cleaning plastic from oceans and rivers worldwide",
       icon: "🌊",
       totalDonations: 15420,
     },
     {
-      id: "2",
+      id: "plant_trees",
       name: "Plant Trees Initiative",
       description: "Planting trees to combat climate change",
       icon: "🌳",
       totalDonations: 12850,
     },
     {
-      id: "3",
+      id: "wildlife",
       name: "Wildlife Conservation",
       description: "Protecting endangered species and habitats",
       icon: "🦁",
       totalDonations: 10230,
     },
     {
-      id: "4",
+      id: "clean_energy",
       name: "Clean Energy Fund",
       description: "Supporting renewable energy projects",
       icon: "⚡",
@@ -71,19 +78,50 @@ export default function DonatePage() {
     },
   ];
 
-  const handleDonate = () => {
-    // API call would go here
-    console.log(`Donating ${donationAmount} coins to`, selectedRecipient);
-    setShowDonateModal(false);
-    setDonationAmount(10);
-    setSelectedRecipient(null);
+  const handleDonate = async () => {
+    try {
+      const donationData: any = {
+        amount: donationAmount,
+        type: selectedRecipient.type,
+      };
+
+      if (selectedRecipient.type === "friend") {
+        donationData.toUserId = selectedRecipient.id || selectedRecipient._id;
+      } else {
+        donationData.charityId = selectedRecipient.id;
+      }
+
+      await createDonation(donationData);
+
+      // Refresh user data to update coin balance
+      await refetchUser();
+
+      setShowDonateModal(false);
+      setDonationAmount(10);
+      setSelectedRecipient(null);
+
+      // Show success message (you could add a toast notification here)
+      alert(`Successfully donated ${donationAmount} coins!`);
+    } catch (error) {
+      console.error("Donation failed:", error);
+      alert("Donation failed. Please try again.");
+    }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openDonateModal = (recipient: any, type: "friend" | "charity") => {
     setSelectedRecipient({ ...recipient, type });
     setShowDonateModal(true);
   };
+
+  const loading = !userId || userLoading || friendsLoading;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-primary-darkNavy pb-24 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-primary-darkNavy pb-24">
@@ -128,10 +166,14 @@ export default function DonatePage() {
             </p>
 
             <div className="space-y-3">
-              {friends.map((friend, index) => (
+              {friends.map((friend: any, index: number) => (
                 <FriendCard
-                  key={friend.id}
-                  friend={friend}
+                  key={friend.id || friend._id}
+                  friend={{
+                    id: friend.id || friend._id,
+                    name: friend.name || friend.username,
+                    avatar: friend.avatar,
+                  }}
                   index={index}
                   onDonate={() => openDonateModal(friend, "friend")}
                 />

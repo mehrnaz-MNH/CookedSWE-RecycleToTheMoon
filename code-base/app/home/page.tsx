@@ -1,23 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import SpaceBackground from "@/components/SpaceBackground";
+import TypeDropdown from "@/components/TypeDropdown";
+import RecycleCounter from "@/components/RecycleCounter";
+import BottleStack from "@/components/BottleStack";
+import BottomNav from "@/components/BottomNav";
+import DistanceAxis from "@/components/DistanceAxis";
+import { useStats } from "@/app/lib/hooks";
 
-export default function RootPage() {
+type CounterType = "individual" | "group";
+
+export default function Home() {
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [counterType, setCounterType] = useState<CounterType>("individual");
 
   useEffect(() => {
-    // Check if user is logged in
-    const userId = localStorage.getItem("userId");
-
-    if (userId) {
-      // User is logged in, redirect to home
-      router.push("/home");
-    } else {
-      // User not logged in, redirect to login
+    // Get userId from localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      // Not logged in, redirect to login
       router.push("/login");
+    } else {
+      setUserId(storedUserId);
     }
   }, [router]);
+
+  const { stats, loading } = useStats(userId || "");
+
+  const currentCount = loading ? 5000 : stats[counterType] || 0;
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -41,7 +54,7 @@ export default function RootPage() {
         </header>
 
         {/* Main counter area */}
-        <main className="flex-1 flex flex-col items-center justify-end relative pb-12">
+        <main className="flex-1 flex flex-col items-center justify-end pb-20 relative">
           <div className="relative w-full flex flex-col items-center">
             {/* Bottle stack */}
             <div className="relative z-20 mb-5">
@@ -50,7 +63,11 @@ export default function RootPage() {
 
             {/* Counter with Earth */}
             <div className="relative z-10 -mt-8">
-              <RecycleCounter count={currentCount} />
+              {loading ? (
+                <div className="text-white text-center">Loading...</div>
+              ) : (
+                <RecycleCounter count={currentCount} />
+              )}
             </div>
           </div>
         </main>
