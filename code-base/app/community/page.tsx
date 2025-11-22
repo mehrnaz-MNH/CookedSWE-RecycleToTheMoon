@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import FeedTab from "@/app/components/community/FeedTab";
 import LeaderboardTab from "@/app/components/community/LeaderboardTab";
@@ -10,7 +11,30 @@ import BottomNavigation from "@/app/components/BottomNavigation";
 type Tab = "feed" | "leaderboard" | "discover";
 
 export default function CommunityPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("feed");
+
+  useEffect(() => {
+    // Get userId from localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      // Not logged in, redirect to login
+      router.push("/login");
+    } else {
+      setUserId(storedUserId);
+    }
+  }, [router]);
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: "feed" as Tab, label: "Feed", icon: "📰" },
@@ -65,9 +89,9 @@ export default function CommunityPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {activeTab === "feed" && <FeedTab />}
-            {activeTab === "leaderboard" && <LeaderboardTab />}
-            {activeTab === "discover" && <DiscoverTab />}
+            {activeTab === "feed" && <FeedTab userId={userId} />}
+            {activeTab === "leaderboard" && <LeaderboardTab userId={userId} />}
+            {activeTab === "discover" && <DiscoverTab userId={userId} />}
           </motion.div>
         </AnimatePresence>
       </div>

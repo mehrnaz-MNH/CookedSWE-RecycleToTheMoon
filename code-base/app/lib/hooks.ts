@@ -201,7 +201,7 @@ export function useGroups(type: "user" | "all" = "all", userId?: string) {
       const response = await fetch("/api/groups", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId, userId }),
+        body: JSON.stringify({ groupId, userId, action: "join" }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -216,7 +216,27 @@ export function useGroups(type: "user" | "all" = "all", userId?: string) {
     }
   };
 
-  return { groups, loading, joinGroup, refetch: fetchGroups };
+  const leaveGroup = async (groupId: string, userId: string) => {
+    try {
+      const response = await fetch("/api/groups", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId, userId, action: "leave" }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await fetchGroups();
+        return data.group;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error("Error leaving group:", err);
+      throw err;
+    }
+  };
+
+  return { groups, loading, joinGroup, leaveGroup, refetch: fetchGroups };
 }
 
 // Leaderboard hooks
@@ -325,7 +345,27 @@ export function useFriends(userId: string = DEMO_USER_ID) {
     }
   };
 
-  return { friends, loading, addFriend, refetch: fetchFriends };
+  const removeFriend = async (friendId: string) => {
+    try {
+      const response = await fetch("/api/friends", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, friendId }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await fetchFriends();
+        return data;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error("Error removing friend:", err);
+      throw err;
+    }
+  };
+
+  return { friends, loading, addFriend, removeFriend, refetch: fetchFriends };
 }
 
 // Users hooks (for discovery)

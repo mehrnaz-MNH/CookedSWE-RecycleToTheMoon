@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Users, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import CoinBalance from "../components/CoinBalance";
@@ -9,7 +10,7 @@ import TabButton from "../components/DonateTabButton";
 import FriendCard from "../components/FriendCard";
 import CharityCard from "../components/CharityCard";
 import DonateModal from "../components/DonateModal";
-import { useUser, useDonations, DEMO_USER_ID } from "../lib/hooks";
+import { useUser, useDonations, useFriends } from "../lib/hooks";
 
 interface Charity {
   id: string;
@@ -20,6 +21,8 @@ interface Charity {
 }
 
 export default function DonatePage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"friends" | "charities">(
     "friends"
   );
@@ -27,18 +30,22 @@ export default function DonatePage() {
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const [donationAmount, setDonationAmount] = useState(10);
 
-  const { user, loading, refetch: refetchUser } = useUser(DEMO_USER_ID);
-  const { createDonation, loading: donating } = useDonations(DEMO_USER_ID);
+  useEffect(() => {
+    // Get userId from localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      // Not logged in, redirect to login
+      router.push("/login");
+    } else {
+      setUserId(storedUserId);
+    }
+  }, [router]);
+
+  const { user, loading: userLoading, refetch: refetchUser } = useUser(userId || "");
+  const { createDonation, loading: donating } = useDonations(userId || "");
+  const { friends, loading: friendsLoading } = useFriends(userId || "");
 
   const availableCoins = user?.digitalCoins || 0;
-
-  // Mock friends data - in production, fetch from user.friends with populated data
-  const friends = user?.friends || [
-    { id: "1", name: "Sarah Johnson", avatar: "🌟" },
-    { id: "2", name: "Mike Chen", avatar: "🚀" },
-    { id: "3", name: "Emma Davis", avatar: "💎" },
-    { id: "4", name: "John Smith", avatar: "⚡" },
-  ];
 
   const charities: Charity[] = [
     {
@@ -105,6 +112,8 @@ export default function DonatePage() {
     setSelectedRecipient({ ...recipient, type });
     setShowDonateModal(true);
   };
+
+  const loading = !userId || userLoading || friendsLoading;
 
   if (loading) {
     return (

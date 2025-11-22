@@ -2,10 +2,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useActivities, DEMO_USER_ID } from "../../lib/hooks";
+import { useActivities } from "../../lib/hooks";
 
-export default function FeedTab() {
-  const { activities, loading } = useActivities("public", DEMO_USER_ID);
+interface FeedTabProps {
+  userId: string;
+}
+
+export default function FeedTab({ userId }: FeedTabProps) {
+  const { activities, loading } = useActivities("friends", userId);
 
   const container = {
     hidden: { opacity: 0 },
