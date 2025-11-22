@@ -293,10 +293,10 @@ export function useFriends(userId: string = DEMO_USER_ID) {
   const fetchFriends = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/user?userId=${userId}`);
+      const response = await fetch(`/api/user/${userId}`);
       const data = await response.json();
-      if (response.ok && data.user) {
-        setFriends(data.user.friends || []);
+      if (response.ok) {
+        setFriends(data.friends || []);
       }
     } catch (err) {
       console.error("Error fetching friends:", err);
@@ -326,4 +326,34 @@ export function useFriends(userId: string = DEMO_USER_ID) {
   };
 
   return { friends, loading, addFriend, refetch: fetchFriends };
+}
+
+// Users hooks (for discovery)
+export function useUsers(excludeUserId?: string) {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [excludeUserId]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (excludeUserId) params.append("excludeUserId", excludeUserId);
+
+      const response = await fetch(`/api/users?${params}`);
+      const data = await response.json();
+      if (response.ok) {
+        setUsers(data.users || []);
+      }
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { users, loading, refetch: fetchUsers };
 }

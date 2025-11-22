@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
 import { User } from "../../lib/models";
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find both users
+    // Check if both users exist
     const user = await User.findById(userId);
     const friend = await User.findById(friendId);
 
@@ -31,27 +32,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if already friends
-    if (user.friends.includes(friendId)) {
-      return NextResponse.json(
-        { error: "Already friends with this user" },
-        { status: 400 }
-      );
-    }
+    // Add friend to both users' friends lists using $addToSet (prevents duplicates)
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { friends: friendId },
+    });
 
-    // Add friend to both users' friends lists
-    user.friends.push(friendId);
-    friend.friends.push(userId);
-
-    await user.save();
-    await friend.save();
+    await User.findByIdAndUpdate(friendId, {
+      $addToSet: { friends: userId },
+    });
 
     return NextResponse.json(
-      { message: "Friend added successfully", user },
+      { message: "Friend added successfully" },
       { status: 200 }
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error adding friend:", error);
+    return NextResponse.json(
+      { error: "Failed to add friend" },
+      { status: 500 }
+    );
   }
 }

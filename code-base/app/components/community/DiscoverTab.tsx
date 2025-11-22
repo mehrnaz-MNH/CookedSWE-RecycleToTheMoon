@@ -2,30 +2,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useGroups, useFriends, DEMO_USER_ID } from "../../lib/hooks";
+import { useState, useMemo } from "react";
+import {
+  useGroups,
+  useFriends,
+  useUsers,
+  DEMO_USER_ID,
+} from "../../lib/hooks";
 
 export default function DiscoverTab() {
   const [discoverType, setDiscoverType] = useState<"groups" | "friends">(
     "groups"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-  // Fetch groups from database
+  // Fetch groups and users from database
   const { groups, loading: groupsLoading, joinGroup } = useGroups("all");
-  const { friends, loading: friendsLoading, addFriend } = useFriends(DEMO_USER_ID);
+  const { friends, loading: friendsLoading, addFriend } =
+    useFriends(DEMO_USER_ID);
+  const { users: allUsers, loading: usersLoading } = useUsers(DEMO_USER_ID);
 
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
   const [addingFriendId, setAddingFriendId] = useState<string | null>(null);
+
+  const showNotification = (type: "success" | "error", message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleJoinGroup = async (groupId: string) => {
     try {
       setJoiningGroupId(groupId);
       await joinGroup(groupId, DEMO_USER_ID);
-      alert("Successfully joined the group!");
+      showNotification("success", "Successfully joined the group!");
     } catch (error) {
       console.error("Error joining group:", error);
-      alert("Failed to join group. Please try again.");
+      showNotification("error", "Failed to join group. Please try again.");
     } finally {
       setJoiningGroupId(null);
     }
@@ -35,10 +51,10 @@ export default function DiscoverTab() {
     try {
       setAddingFriendId(friendId);
       await addFriend(friendId);
-      alert("Successfully added friend!");
+      showNotification("success", "Successfully added friend!");
     } catch (error) {
       console.error("Error adding friend:", error);
-      alert("Failed to add friend. Please try again.");
+      showNotification("error", "Failed to add friend. Please try again.");
     } finally {
       setAddingFriendId(null);
     }
@@ -51,35 +67,32 @@ export default function DiscoverTab() {
       group.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Mock friends for now (you can implement friends API later)
-  const mockUsers =
-    friends.length > 0
-      ? friends.map((friend: any) => ({
-          id: friend._id,
-          name: friend.username,
-          avatar: friend.avatar,
-          recyclingPersona: friend.recyclingPersona,
-          itemsRecycled: friend.containerCount || 0,
-          isFriend: true,
-        }))
-      : [
-          {
-            id: "1",
-            name: "Jordan Lee",
-            avatar: "🌻",
-            recyclingPersona: "Sustainability Guru",
-            itemsRecycled: 456,
-            isFriend: false,
-          },
-          {
-            id: "2",
-            name: "Taylor Smith",
-            avatar: "🌈",
-            recyclingPersona: "Green Champion",
-            itemsRecycled: 389,
-            isFriend: false,
-          },
-        ];
+  // Get friend IDs for comparison
+  const friendIds = useMemo(
+    () => new Set(friends.map((friend: any) => friend._id)),
+    [friends]
+  );
+
+  // Filter users to show only non-friends
+  const discoverableUsers = useMemo(() => {
+    return allUsers
+      .filter((user: any) => !friendIds.has(user._id))
+      .map((user: any) => ({
+        id: user._id,
+        name: user.username,
+        avatar: user.avatar,
+        recyclingPersona: user.recyclingPersona,
+        itemsRecycled: user.containerCount || 0,
+        isFriend: false,
+      }));
+  }, [allUsers, friendIds]);
+
+  // Filter users based on search query
+  const filteredUsers = discoverableUsers.filter(
+    (user: any) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.recyclingPersona?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const container = {
     hidden: { opacity: 0 },
@@ -96,10 +109,31 @@ export default function DiscoverTab() {
     show: { y: 0, opacity: 1 },
   };
 
-  const loading = discoverType === "groups" ? groupsLoading : friendsLoading;
+  const loading = discoverType === "groups" ? groupsLoading : usersLoading;
 
   return (
-    <div>
+    <div className="relative">
+      {/* Notification */}
+      {notification && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+            notification.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">
+              {notification.type === "success" ? "✓" : "✗"}
+            </span>
+            <span className="font-medium">{notification.message}</span>
+          </div>
+        </motion.div>
+      )}
+
       {/* Toggle Buttons */}
       <div className="flex gap-2 mb-6">
         <motion.button
@@ -207,7 +241,7 @@ export default function DiscoverTab() {
                   </div>
                 </motion.div>
               ))
-            : mockUsers.map((user: any) => (
+            : filteredUsers.map((user: any) => (
                 <motion.div
                   key={user.id}
                   variants={item}
@@ -265,6 +299,19 @@ export default function DiscoverTab() {
           </p>
           <p className="text-sm text-gray-400 dark:text-gray-500">
             Try a different search term
+          </p>
+        </div>
+      )}
+
+      {!loading && filteredUsers.length === 0 && discoverType === "friends" && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            No users found
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            {searchQuery
+              ? "Try a different search term"
+              : "All users are already your friends!"}
           </p>
         </div>
       )}
