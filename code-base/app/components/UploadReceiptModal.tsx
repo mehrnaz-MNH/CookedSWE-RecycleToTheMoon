@@ -12,6 +12,10 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [pointsEarned, setPointsEarned] = useState<number>(0);
   const [analysisResult, setAnalysisResult] = useState<{
     dateTime: string;
     quantity: number;
@@ -46,11 +50,15 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
   const handleSubmitReceipt = async () => {
     if (!analysisResult) return;
 
+    setIsSubmitting(true);
+    setSubmitError(null);
+
     try {
       // Get userId from localStorage
       const userId = localStorage.getItem('userId');
       if (!userId) {
-        alert('Please log in to submit receipts');
+        setSubmitError('Please log in to submit receipts');
+        setIsSubmitting(false);
         return;
       }
 
@@ -75,16 +83,19 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
       const data = await response.json();
       console.log('Receipt submitted successfully:', data);
 
-      // Show success message
-      alert(`Success! You earned ${data.pointsEarned} points for recycling ${analysisResult.quantity} items!`);
+      // Show success state
+      setPointsEarned(data.pointsEarned);
+      setSubmitSuccess(true);
+      setIsSubmitting(false);
 
-      handleClose();
-
-      // Refresh the page to show updated stats
-      window.location.reload();
+      // Wait 2 seconds then refresh to show updated stats
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error) {
       console.error('Error submitting receipt:', error);
-      alert('Failed to submit receipt. Please try again.');
+      setSubmitError('Failed to submit receipt. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
@@ -93,6 +104,10 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
     setPreviewUrl(null);
     setAnalysisResult(null);
     setIsAnalyzing(false);
+    setIsSubmitting(false);
+    setSubmitSuccess(false);
+    setSubmitError(null);
+    setPointsEarned(0);
     onClose();
   };
 
@@ -215,6 +230,74 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
               </div>
             )}
 
+            {/* Success Message */}
+            {submitSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-green-600 dark:text-green-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-green-800 dark:text-green-300">
+                      Success!
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      You earned {pointsEarned} points for recycling {analysisResult?.quantity} items!
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Error Message */}
+            {submitError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-red-600 dark:text-red-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-800 dark:text-red-300">
+                      Error
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-400">
+                      {submitError}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {analysisResult ? (
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
@@ -272,20 +355,44 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleClose}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                disabled={isSubmitting || submitSuccess}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitReceipt}
-                disabled={!analysisResult}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  analysisResult
+                disabled={!analysisResult || isSubmitting || submitSuccess}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+                  analysisResult && !isSubmitting && !submitSuccess
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >
-                Submit
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Submitting...</span>
+                  </>
+                ) : submitSuccess ? (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>Submitted</span>
+                  </>
+                ) : (
+                  'Submit'
+                )}
               </button>
             </div>
           </div>

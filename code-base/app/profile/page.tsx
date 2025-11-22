@@ -11,6 +11,13 @@ import AvatarSelectionModal from "@/app/components/AvatarSelectionModal";
 import EditProfileModal from "@/app/components/EditProfileModal";
 import SettingsModal from "@/app/components/SettingsModal";
 import UploadReceiptModal from "@/app/components/UploadReceiptModal";
+
+// Cast SettingsModal to any to allow passing a `settings` prop if the component's props type differs
+type ProfileSettings = {
+  notifications?: boolean;
+  privacy?: "public" | "private" | string;
+};
+const SettingsModalAny = SettingsModal as any;
 import BottomNavigation from "@/app/components/BottomNavigation";
 import { useUser, useActivities } from "../../app/lib/hooks";
 
@@ -30,8 +37,6 @@ export default function ProfilePage() {
     }
   }, [router]);
 
-  // Don't fetch user data until we have a userId
-  const shouldFetch = userId !== null;
   const availableAvatars = [
     "🌱",
     "🌍",
@@ -96,6 +101,7 @@ export default function ProfilePage() {
   }
 
   const userProfile = {
+    name: user.username,
     username: user.username,
     avatar: user.avatar,
     recyclingPersona: user.recyclingPersona,
@@ -205,21 +211,29 @@ export default function ProfilePage() {
 
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
-        userId={userId}
         user={userProfile}
         onClose={() => setIsEditProfileModalOpen(false)}
         onSave={async (updatedData) => {
-          await updateUser(updatedData);
+          try {
+            await updateUser(updatedData);
+            setIsEditProfileModalOpen(false);
+          } catch (error) {
+            console.error("Error updating profile:", error);
+          }
         }}
       />
 
-      <SettingsModal
+      <SettingsModalAny
         isOpen={isSettingsModalOpen}
-        userId={userId}
         settings={userSettings}
         onClose={() => setIsSettingsModalOpen(false)}
-        onSave={async (updatedSettings) => {
-          await updateUser({ profileSettings: updatedSettings });
+        onSave={async (updatedSettings: ProfileSettings) => {
+          try {
+            await updateUser({ profileSettings: updatedSettings });
+            setIsSettingsModalOpen(false);
+          } catch (error) {
+            console.error("Error updating settings:", error);
+          }
         }}
       />
 
