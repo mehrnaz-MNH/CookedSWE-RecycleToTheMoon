@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Load .env file
-import 'dotenv/config';
+import "dotenv/config";
 
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 // Import models AFTER mongoose is ready
 async function seedDatabase() {
   try {
     // Connect first
-    const MONGODB_URI = process.env.NEXT_PUBLIC_MONGODB_URL || process.env.MONGODB_URL || process.env.MONGODB_URI;
+    const MONGODB_URI =
+      process.env.NEXT_PUBLIC_MONGODB_URL ||
+      process.env.MONGODB_URL ||
+      process.env.MONGODB_URI;
     if (!MONGODB_URI) {
       throw new Error("MongoDB URI not found in environment variables");
     }
@@ -16,12 +20,14 @@ async function seedDatabase() {
     console.log("🌱 Connected to MongoDB");
 
     // Clear cached models to ensure we use the latest schema
-    Object.keys(mongoose.connection.models).forEach(key => {
-      delete mongoose.connection.models[key];
+    Object.keys(mongoose.connection.models).forEach((key) => {
+      delete (mongoose.connection.models as any)[key];
     });
 
     // Now import models with fresh schema
-    const { User, Group, Activity, Badge, Transaction } = await import("../app/lib/models");
+    const { User, Group, Activity, Badge, Transaction } = await import(
+      "../app/lib/models"
+    );
 
     // Clear existing data
     console.log("🗑️  Clearing existing data...");
@@ -142,8 +148,16 @@ async function seedDatabase() {
         groups: [groups[0]._id],
         friends: [],
         badges: [
-          { id: badges[0]._id.toString(), name: badges[0].name, earnedDate: new Date() },
-          { id: badges[1]._id.toString(), name: badges[1].name, earnedDate: new Date() },
+          {
+            id: badges[0]._id.toString(),
+            name: badges[0].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[1]._id.toString(),
+            name: badges[1].name,
+            earnedDate: new Date(),
+          },
         ],
         points: 2340,
         co2Saved: "45kg",
@@ -166,9 +180,21 @@ async function seedDatabase() {
         groups: [groups[0]._id, groups[2]._id],
         friends: [],
         badges: [
-          { id: badges[0]._id.toString(), name: badges[0].name, earnedDate: new Date() },
-          { id: badges[1]._id.toString(), name: badges[1].name, earnedDate: new Date() },
-          { id: badges[2]._id.toString(), name: badges[2].name, earnedDate: new Date() },
+          {
+            id: badges[0]._id.toString(),
+            name: badges[0].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[1]._id.toString(),
+            name: badges[1].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[2]._id.toString(),
+            name: badges[2].name,
+            earnedDate: new Date(),
+          },
         ],
         points: 4560,
         co2Saved: "78kg",
@@ -191,10 +217,26 @@ async function seedDatabase() {
         groups: [groups[1]._id],
         friends: [],
         badges: [
-          { id: badges[0]._id.toString(), name: badges[0].name, earnedDate: new Date() },
-          { id: badges[1]._id.toString(), name: badges[1].name, earnedDate: new Date() },
-          { id: badges[2]._id.toString(), name: badges[2].name, earnedDate: new Date() },
-          { id: badges[3]._id.toString(), name: badges[3].name, earnedDate: new Date() },
+          {
+            id: badges[0]._id.toString(),
+            name: badges[0].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[1]._id.toString(),
+            name: badges[1].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[2]._id.toString(),
+            name: badges[2].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[3]._id.toString(),
+            name: badges[3].name,
+            earnedDate: new Date(),
+          },
         ],
         points: 7890,
         co2Saved: "123kg",
@@ -217,9 +259,21 @@ async function seedDatabase() {
         groups: [groups[0]._id],
         friends: [],
         badges: [
-          { id: badges[0]._id.toString(), name: badges[0].name, earnedDate: new Date() },
-          { id: badges[1]._id.toString(), name: badges[1].name, earnedDate: new Date() },
-          { id: badges[5]._id.toString(), name: badges[5].name, earnedDate: new Date() },
+          {
+            id: badges[0]._id.toString(),
+            name: badges[0].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[1]._id.toString(),
+            name: badges[1].name,
+            earnedDate: new Date(),
+          },
+          {
+            id: badges[5]._id.toString(),
+            name: badges[5].name,
+            earnedDate: new Date(),
+          },
         ],
         points: 3450,
         co2Saved: "56kg",
@@ -338,7 +392,12 @@ async function seedDatabase() {
 
     // Verify passwords were saved
     const testUser = await User.findOne({ username: "testuser" });
-    console.log("Verification - testuser password saved:", !!testUser?.password, "Length:", testUser?.password?.length);
+    console.log(
+      "Verification - testuser password saved:",
+      !!testUser?.password,
+      "Length:",
+      testUser?.password?.length
+    );
 
     await mongoose.disconnect();
     process.exit(0);

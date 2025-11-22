@@ -24,6 +24,7 @@ export default function Home() {
       // Not logged in, redirect to login
       router.push("/login");
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserId(storedUserId);
     }
   }, [router]);

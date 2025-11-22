@@ -25,6 +25,7 @@ export default function ProfilePage() {
       // Not logged in, redirect to login
       router.push("/login");
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserId(storedUserId);
     }
   }, [router]);
@@ -68,11 +69,11 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      localStorage.removeItem('userId');
-      router.push('/login');
+      await fetch("/api/auth/logout", { method: "POST" });
+      localStorage.removeItem("userId");
+      router.push("/login");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
@@ -103,7 +104,7 @@ export default function ProfilePage() {
 
   const userSettings = {
     notifications: user.profileSettings?.notifications ?? true,
-    privacy: user.profileSettings?.privacy ?? 'public',
+    privacy: user.profileSettings?.privacy ?? "public",
   };
 
   const stats = {
@@ -119,7 +120,9 @@ export default function ProfilePage() {
         id: activity._id,
         title: activity.content,
         time: new Date(activity.datetime).toLocaleDateString(),
-        type: activity.type === "recycled" ? "recycling" : "achievement",
+        type: (activity.type === "recycled" ? "recycling" : "achievement") as
+          | "achievement"
+          | "recycling",
       }));
 
   return (

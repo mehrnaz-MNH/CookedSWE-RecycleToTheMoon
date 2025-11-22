@@ -21,17 +21,23 @@ export default function CommunityPage() {
     if (!storedUserId) {
       // Not logged in, redirect to login
       router.push("/login");
-    } else {
-      setUserId(storedUserId);
+      return;
     }
+
+    // Only update if userId is different to avoid cascading renders
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUserId((current) => {
+      if (current !== storedUserId) {
+        return storedUserId;
+      }
+      return current;
+    });
   }, [router]);
 
   if (!userId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">
-          Loading...
-        </div>
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
       </div>
     );
   }

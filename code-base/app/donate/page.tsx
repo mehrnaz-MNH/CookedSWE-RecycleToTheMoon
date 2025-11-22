@@ -37,11 +37,16 @@ export default function DonatePage() {
       // Not logged in, redirect to login
       router.push("/login");
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserId(storedUserId);
     }
   }, [router]);
 
-  const { user, loading: userLoading, refetch: refetchUser } = useUser(userId || "");
+  const {
+    user,
+    loading: userLoading,
+    refetch: refetchUser,
+  } = useUser(userId || "");
   const { createDonation, loading: donating } = useDonations(userId || "");
   const { friends, loading: friendsLoading } = useFriends(userId || "");
 
