@@ -1,35 +1,48 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import StatsCards from '@/components/profile/StatsCards';
-import RecentActivity from '@/components/profile/RecentActivity';
-import AvatarSelectionModal from '@/components/profile/AvatarSelectionModal';
-import EditProfileModal from '@/components/profile/EditProfileModal';
-import SettingsModal from '@/components/profile/SettingsModal';
-import UploadReceiptModal from '@/components/profile/UploadReceiptModal';
-import BottomNavigation from '@/components/profile/BottomNavigation';
-import ViewSelector from '@/components/profile/ViewSelector';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import ProfileHeader from "@/app/components/ProfileHeader";
+import StatsCards from "@/app/components/StatsCards";
+import RecentActivity from "@/app/components/RecentActivity";
+import AvatarSelectionModal from "@/app/components/AvatarSelectionModal";
+import EditProfileModal from "@/app/components/EditProfileModal";
+import SettingsModal from "@/app/components/SettingsModal";
+import UploadReceiptModal from "@/app/components/UploadReceiptModal";
+import BottomNavigation from "@/app/components/BottomNavigation";
+import ViewSelector from "@/app/components/ViewSelector";
 
 export default function ProfilePage() {
-  const availableAvatars = ['🌱', '🌍', '♻️', '🌳', '🌿', '🌺', '🐝', '🦋', '🌻', '🌈', '⚡', '🔥'];
+  const availableAvatars = [
+    "🌱",
+    "🌍",
+    "♻️",
+    "🌳",
+    "🌿",
+    "🌺",
+    "🐝",
+    "🦋",
+    "🌻",
+    "🌈",
+    "⚡",
+    "🔥",
+  ];
 
   const [user, setUser] = useState({
-    name: 'Alex Green',
-    avatar: '🌱',
-    recyclingPersona: 'Eco Warrior',
-    location: 'San Francisco, CA',
+    name: "Alex Green",
+    avatar: "🌱",
+    recyclingPersona: "Eco Warrior",
+    location: "San Francisco, CA",
   });
 
-  const [currentView, setCurrentView] = useState('My Recycling');
+  const [currentView, setCurrentView] = useState("My Recycling");
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const views = ['My Recycling', 'Green Team Recycling', 'City Recycling'];
+  const views = ["My Recycling", "Green Team Recycling", "City Recycling"];
 
   const handleAvatarSelect = (avatar: string) => {
     setUser({ ...user, avatar });
