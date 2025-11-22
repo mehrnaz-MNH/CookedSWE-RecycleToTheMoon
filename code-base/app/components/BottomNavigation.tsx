@@ -15,7 +15,7 @@ export default function BottomNavigation({
 
   const navItems = [
     { icon: Home, label: "Home", href: "/" },
-    { icon: Users, label: "Groups", href: "/groups" },
+    { icon: Users, label: "Community", href: "/community" },
     { icon: Heart, label: "Donate", href: "/donate" },
     { icon: User, label: "Profile", href: "/profile" },
   ];
