@@ -33,22 +33,59 @@ export default function UploadReceiptModal({ isOpen, onClose }: UploadReceiptMod
   const handleAnalyzeReceipt = () => {
     setIsAnalyzing(true);
     setTimeout(() => {
+      // DEMO: Hardcoded values for demonstration
       setAnalysisResult({
         dateTime: new Date().toLocaleString(),
-        quantity: Math.floor(Math.random() * 20) + 5,
+        quantity: 42, // Hardcoded demo value: 42 items
         items: 'Plastic bottles, aluminum cans',
       });
       setIsAnalyzing(false);
     }, 2000);
   };
 
-  const handleSubmitReceipt = () => {
-    console.log('Submitting receipt:', {
-      file: uploadedFile,
-      analysis: analysisResult,
-    });
+  const handleSubmitReceipt = async () => {
+    if (!analysisResult) return;
 
-    handleClose();
+    try {
+      // Get userId from localStorage
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please log in to submit receipts');
+        return;
+      }
+
+      // Submit to database
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          quantity: analysisResult.quantity,
+          itemType: 'Mixed recyclables', // Hardcoded item type
+          receiptUrl: previewUrl || '', // Use the preview image as receipt
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit receipt');
+      }
+
+      const data = await response.json();
+      console.log('Receipt submitted successfully:', data);
+
+      // Show success message
+      alert(`Success! You earned ${data.pointsEarned} points for recycling ${analysisResult.quantity} items!`);
+
+      handleClose();
+
+      // Refresh the page to show updated stats
+      window.location.reload();
+    } catch (error) {
+      console.error('Error submitting receipt:', error);
+      alert('Failed to submit receipt. Please try again.');
+    }
   };
 
   const handleClose = () => {
