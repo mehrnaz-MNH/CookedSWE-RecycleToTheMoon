@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface BottleStackProps {
   count?: number;
@@ -10,15 +11,31 @@ const BottleStack = ({ count = 6}: BottleStackProps) => {
   const bottles = Array.from({ length: count }, (_, i) => i);
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      {bottles.map((bottle) => (
-        <svg
+    <motion.div
+      className="flex flex-col items-center gap-1"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {bottles.map((bottle, index) => (
+        <motion.svg
           key={bottle}
           viewBox="0 0 40 80"
           className="w-6 h-12 opacity-80"
           xmlns="http://www.w3.org/2000/svg"
-          style={{
-            animation: `float 3s ease-in-out infinite ${bottle * 0.2}s`,
+          initial={{ opacity: 0, y: 20 }}
+          animate={{
+            opacity: 0.8,
+            y: [0, -10, 0],
+          }}
+          transition={{
+            opacity: { delay: index * 0.1, duration: 0.3 },
+            y: {
+              delay: index * 0.1,
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            },
           }}
         >
           {/* Bottle neck */}
@@ -35,20 +52,9 @@ const BottleStack = ({ count = 6}: BottleStackProps) => {
 
           {/* Bottle highlight */}
           <rect x="10" y="25" width="3" height="40" fill="#2a3548" opacity="0.3" rx="1" />
-        </svg>
+        </motion.svg>
       ))}
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-      `}</style>
-    </div>
+    </motion.div>
   );
 };
 

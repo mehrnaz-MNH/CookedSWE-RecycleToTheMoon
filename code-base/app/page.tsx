@@ -26,6 +26,15 @@ export default function Home() {
       {/* Space background with stars and moon */}
       <SpaceBackground />
 
+      {/* Distance Axis - spans from moon to earth surface */}
+      <div className="fixed inset-0 z-10 pointer-events-none">
+        <div className="relative h-full max-w-md mx-auto">
+          <div className="absolute left-0 right-0 top-32 bottom-52">
+            <DistanceAxis />
+          </div>
+        </div>
+      </div>
+
       {/* Main content */}
       <div className="relative z-10 flex flex-col min-h-screen max-w-md mx-auto">
         {/* Header with dropdown */}
@@ -36,11 +45,6 @@ export default function Home() {
         {/* Main counter area */}
         <main className="flex-1 flex flex-col items-center justify-end pb-20 relative">
           <div className="relative w-full flex flex-col items-center">
-            {/* Distance Axis - positioned from top to bottom of bottle stack */}
-            <div className="absolute left-0 right-0 top-0 bottom-32 z-10 pointer-events-none mb-20">
-              <DistanceAxis />
-            </div>
-
             {/* Bottle stack */}
             <div className="relative z-20 mb-5">
               <BottleStack count={5} />
