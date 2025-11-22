@@ -61,23 +61,37 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Join a group
+// Join or leave a group
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
 
     const body = await request.json();
-    const { groupId, userId } = body;
+    const { groupId, userId, action } = body; // action: 'join' or 'leave'
 
-    const group = await Group.findByIdAndUpdate(
-      groupId,
-      { $addToSet: { members: userId } },
-      { new: true }
-    );
+    if (action === "leave") {
+      // Leave group
+      const group = await Group.findByIdAndUpdate(
+        groupId,
+        { $pull: { members: userId } },
+        { new: true }
+      );
 
-    await User.findByIdAndUpdate(userId, { $addToSet: { groups: groupId } });
+      await User.findByIdAndUpdate(userId, { $pull: { groups: groupId } });
 
-    return NextResponse.json({ group }, { status: 200 });
+      return NextResponse.json({ group, message: "Left group successfully" }, { status: 200 });
+    } else {
+      // Join group (default)
+      const group = await Group.findByIdAndUpdate(
+        groupId,
+        { $addToSet: { members: userId } },
+        { new: true }
+      );
+
+      await User.findByIdAndUpdate(userId, { $addToSet: { groups: groupId } });
+
+      return NextResponse.json({ group, message: "Joined group successfully" }, { status: 200 });
+    }
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

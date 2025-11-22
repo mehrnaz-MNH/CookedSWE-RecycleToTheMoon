@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
 import { User } from "../../lib/models";
 
+// Add a friend
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -49,6 +50,43 @@ export async function POST(request: NextRequest) {
     console.error("Error adding friend:", error);
     return NextResponse.json(
       { error: "Failed to add friend" },
+      { status: 500 }
+    );
+  }
+}
+
+// Remove a friend
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const body = await request.json();
+    const { userId, friendId } = body;
+
+    if (!userId || !friendId) {
+      return NextResponse.json(
+        { error: "userId and friendId are required" },
+        { status: 400 }
+      );
+    }
+
+    // Remove friend from both users' friends lists
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: friendId },
+    });
+
+    await User.findByIdAndUpdate(friendId, {
+      $pull: { friends: userId },
+    });
+
+    return NextResponse.json(
+      { message: "Friend removed successfully" },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Error removing friend:", error);
+    return NextResponse.json(
+      { error: "Failed to remove friend" },
       { status: 500 }
     );
   }

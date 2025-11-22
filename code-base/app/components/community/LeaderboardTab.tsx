@@ -2,17 +2,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { useLeaderboard, DEMO_USER_ID } from "../../lib/hooks";
+import { useState, useEffect, useMemo } from "react";
+import { useFriends, useGroups } from "../../lib/hooks";
 
-export default function LeaderboardTab() {
+interface LeaderboardTabProps {
+  userId: string;
+}
+
+export default function LeaderboardTab({ userId }: LeaderboardTabProps) {
   const [leaderboardType, setLeaderboardType] = useState<"users" | "groups">(
     "users"
   );
-  const { leaderboard, loading } = useLeaderboard(
-    leaderboardType === "users" ? "users" : "groups",
-    "all-time"
-  );
+
+  const { friends, loading: friendsLoading } = useFriends(userId);
+  const { groups, loading: groupsLoading } = useGroups("user", userId);
+
+  // Sort friends by points for leaderboard
+  const sortedFriends = useMemo(() => {
+    return [...friends]
+      .sort((a, b) => (b.points || 0) - (a.points || 0))
+      .map((friend, index) => ({
+        rank: index + 1,
+        username: friend.username,
+        avatar: friend.avatar,
+        points: friend.points || 0,
+        itemsRecycled: friend.containerCount || 0,
+      }));
+  }, [friends]);
+
+  // Sort groups by points for leaderboard
+  const sortedGroups = useMemo(() => {
+    return [...groups]
+      .sort((a, b) => (b.points || 0) - (a.points || 0))
+      .map((group, index) => ({
+        rank: index + 1,
+        name: group.name,
+        avatar: group.avatar,
+        points: group.points || 0,
+        itemsRecycled: group.recycledCount || 0,
+      }));
+  }, [groups]);
 
   const getRankColor = (rank: number) => {
     switch (rank) {
@@ -55,6 +84,9 @@ export default function LeaderboardTab() {
     show: { x: 0, opacity: 1 },
   };
 
+  const loading = leaderboardType === "users" ? friendsLoading : groupsLoading;
+  const leaderboard = leaderboardType === "users" ? sortedFriends : sortedGroups;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -79,7 +111,7 @@ export default function LeaderboardTab() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          👥 Users
+          👥 Friends
         </motion.button>
         <motion.button
           onClick={() => setLeaderboardType("groups")}
@@ -91,7 +123,7 @@ export default function LeaderboardTab() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          🏢 Groups
+          🏢 My Groups
         </motion.button>
       </div>
 
@@ -123,7 +155,7 @@ export default function LeaderboardTab() {
               {/* User/Group Avatar */}
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
                 <span className="text-2xl">
-                  {leaderboardType === "users" ? entry.avatar : entry.avatar}
+                  {entry.avatar || (leaderboardType === "users" ? "🌱" : "♻️")}
                 </span>
               </div>
 
@@ -160,7 +192,14 @@ export default function LeaderboardTab() {
 
       {leaderboard.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No data available</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            {leaderboardType === "users" ? "No friends yet" : "No groups yet"}
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            {leaderboardType === "users"
+              ? "Add friends in the Discover tab!"
+              : "Join groups in the Discover tab!"}
+          </p>
         </div>
       )}
     </div>

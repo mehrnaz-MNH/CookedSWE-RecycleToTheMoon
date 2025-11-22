@@ -7,10 +7,13 @@ import {
   useGroups,
   useFriends,
   useUsers,
-  DEMO_USER_ID,
 } from "../../lib/hooks";
 
-export default function DiscoverTab() {
+interface DiscoverTabProps {
+  userId: string;
+}
+
+export default function DiscoverTab({ userId }: DiscoverTabProps) {
   const [discoverType, setDiscoverType] = useState<"groups" | "friends">(
     "groups"
   );
@@ -20,30 +23,83 @@ export default function DiscoverTab() {
     message: string;
   } | null>(null);
 
-  // Fetch groups and users from database
-  const { groups, loading: groupsLoading, joinGroup } = useGroups("all");
-  const { friends, loading: friendsLoading, addFriend } =
-    useFriends(DEMO_USER_ID);
-  const { users: allUsers, loading: usersLoading } = useUsers(DEMO_USER_ID);
+  // Fetch all groups and user's groups
+  const { groups: allGroups, loading: allGroupsLoading, joinGroup, leaveGroup, refetch: refetchAllGroups } = useGroups("all");
+  const { groups: userGroups, loading: userGroupsLoading, refetch: refetchUserGroups } = useGroups("user", userId);
+
+  // Fetch friends and all users
+  const { friends, loading: friendsLoading, addFriend, removeFriend } = useFriends(userId);
+  const { users: allUsers, loading: usersLoading } = useUsers(userId);
 
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
+  const [leavingGroupId, setLeavingGroupId] = useState<string | null>(null);
   const [addingFriendId, setAddingFriendId] = useState<string | null>(null);
+  const [removingFriendId, setRemovingFriendId] = useState<string | null>(null);
 
   const showNotification = (type: "success" | "error", message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Get user's group IDs
+  const userGroupIds = useMemo(
+    () => new Set(userGroups.map((group: any) => group._id)),
+    [userGroups]
+  );
+
+  // Get friend IDs
+  const friendIds = useMemo(
+    () => new Set(friends.map((friend: any) => friend._id)),
+    [friends]
+  );
+
+  // Add membership status to groups
+  const groupsWithStatus = useMemo(() => {
+    return allGroups.map((group: any) => ({
+      ...group,
+      isMember: userGroupIds.has(group._id),
+    }));
+  }, [allGroups, userGroupIds]);
+
+  // Add friendship status to users
+  const usersWithStatus = useMemo(() => {
+    return allUsers.map((user: any) => ({
+      id: user._id,
+      name: user.username,
+      avatar: user.avatar,
+      recyclingPersona: user.recyclingPersona,
+      itemsRecycled: user.containerCount || 0,
+      isFriend: friendIds.has(user._id),
+    }));
+  }, [allUsers, friendIds]);
+
   const handleJoinGroup = async (groupId: string) => {
     try {
       setJoiningGroupId(groupId);
-      await joinGroup(groupId, DEMO_USER_ID);
+      await joinGroup(groupId, userId);
+      // Refetch both all groups and user groups to update membership status
+      await Promise.all([refetchAllGroups(), refetchUserGroups()]);
       showNotification("success", "Successfully joined the group!");
     } catch (error) {
       console.error("Error joining group:", error);
       showNotification("error", "Failed to join group. Please try again.");
     } finally {
       setJoiningGroupId(null);
+    }
+  };
+
+  const handleLeaveGroup = async (groupId: string) => {
+    try {
+      setLeavingGroupId(groupId);
+      await leaveGroup(groupId, userId);
+      // Refetch both all groups and user groups to update membership status
+      await Promise.all([refetchAllGroups(), refetchUserGroups()]);
+      showNotification("success", "Successfully left the group!");
+    } catch (error) {
+      console.error("Error leaving group:", error);
+      showNotification("error", "Failed to leave group. Please try again.");
+    } finally {
+      setLeavingGroupId(null);
     }
   };
 
@@ -60,35 +116,28 @@ export default function DiscoverTab() {
     }
   };
 
+  const handleRemoveFriend = async (friendId: string) => {
+    try {
+      setRemovingFriendId(friendId);
+      await removeFriend(friendId);
+      showNotification("success", "Successfully removed friend!");
+    } catch (error) {
+      console.error("Error removing friend:", error);
+      showNotification("error", "Failed to remove friend. Please try again.");
+    } finally {
+      setRemovingFriendId(null);
+    }
+  };
+
   // Filter groups based on search query
-  const filteredGroups = groups.filter(
+  const filteredGroups = groupsWithStatus.filter(
     (group: any) =>
       group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       group.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get friend IDs for comparison
-  const friendIds = useMemo(
-    () => new Set(friends.map((friend: any) => friend._id)),
-    [friends]
-  );
-
-  // Filter users to show only non-friends
-  const discoverableUsers = useMemo(() => {
-    return allUsers
-      .filter((user: any) => !friendIds.has(user._id))
-      .map((user: any) => ({
-        id: user._id,
-        name: user.username,
-        avatar: user.avatar,
-        recyclingPersona: user.recyclingPersona,
-        itemsRecycled: user.containerCount || 0,
-        isFriend: false,
-      }));
-  }, [allUsers, friendIds]);
-
   // Filter users based on search query
-  const filteredUsers = discoverableUsers.filter(
+  const filteredUsers = usersWithStatus.filter(
     (user: any) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.recyclingPersona?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -109,7 +158,7 @@ export default function DiscoverTab() {
     show: { y: 0, opacity: 1 },
   };
 
-  const loading = discoverType === "groups" ? groupsLoading : usersLoading;
+  const loading = discoverType === "groups" ? (allGroupsLoading || userGroupsLoading) : (usersLoading || friendsLoading);
 
   return (
     <div className="relative">
@@ -228,15 +277,29 @@ export default function DiscoverTab() {
                       </div>
                     </div>
 
-                    {/* Join Button */}
+                    {/* Join/Leave Button */}
                     <motion.button
-                      onClick={() => handleJoinGroup(group._id)}
-                      disabled={joiningGroupId === group._id}
-                      className="px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() =>
+                        group.isMember
+                          ? handleLeaveGroup(group._id)
+                          : handleJoinGroup(group._id)
+                      }
+                      disabled={joiningGroupId === group._id || leavingGroupId === group._id}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
+                        group.isMember
+                          ? "bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          : "bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      }`}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {joiningGroupId === group._id ? "Joining..." : "Join"}
+                      {joiningGroupId === group._id
+                        ? "Joining..."
+                        : leavingGroupId === group._id
+                        ? "Leaving..."
+                        : group.isMember
+                        ? "Leave"
+                        : "Join"}
                     </motion.button>
                   </div>
                 </motion.div>
@@ -267,13 +330,17 @@ export default function DiscoverTab() {
                       </span>
                     </div>
 
-                    {/* Add Friend Button */}
+                    {/* Add/Remove Friend Button */}
                     <motion.button
-                      onClick={() => !user.isFriend && handleAddFriend(user.id)}
-                      disabled={user.isFriend || addingFriendId === user.id}
+                      onClick={() =>
+                        user.isFriend
+                          ? handleRemoveFriend(user.id)
+                          : handleAddFriend(user.id)
+                      }
+                      disabled={addingFriendId === user.id || removingFriendId === user.id}
                       className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
                         user.isFriend
-                          ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          ? "bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           : "bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       }`}
                       whileHover={{ scale: 1.05 }}
@@ -281,8 +348,10 @@ export default function DiscoverTab() {
                     >
                       {addingFriendId === user.id
                         ? "Adding..."
+                        : removingFriendId === user.id
+                        ? "Removing..."
                         : user.isFriend
-                        ? "Friends"
+                        ? "Remove"
                         : "Add Friend"}
                     </motion.button>
                   </div>
@@ -311,22 +380,10 @@ export default function DiscoverTab() {
           <p className="text-sm text-gray-400 dark:text-gray-500">
             {searchQuery
               ? "Try a different search term"
-              : "All users are already your friends!"}
+              : "No other users available to add"}
           </p>
         </div>
       )}
-
-      {/* Suggestions Header */}
-      <motion.div
-        className="mt-8 mb-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-          Suggested for you
-        </h3>
-      </motion.div>
     </div>
   );
 }
