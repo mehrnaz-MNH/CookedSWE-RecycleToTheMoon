@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 interface ProfileHeaderProps {
   user: {
-    name: string;
+    username: string;
     avatar: string;
     recyclingPersona: string;
     location: string;
@@ -61,7 +61,7 @@ export default function ProfileHeader({ user, onEditAvatar }: ProfileHeaderProps
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        {user.name}
+        {user.username}
       </motion.h2>
 
       <motion.div

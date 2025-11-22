@@ -1,26 +1,93 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+
+interface Badge {
+  _id: string;
+  name: string;
+  emoji: string;
+  rarity: string;
+}
 
 interface EditProfileModalProps {
   isOpen: boolean;
+  userId: string;
   user: {
-    name: string;
+    username: string;
     recyclingPersona: string;
     location: string;
   };
   onClose: () => void;
-  onSave?: (updatedUser: { name: string; recyclingPersona: string; location: string }) => void;
+  onSave?: (updatedUser: { username: string; recyclingPersona: string; location: string }) => void;
 }
 
 export default function EditProfileModal({
   isOpen,
+  userId,
   user,
   onClose,
   onSave,
 }: EditProfileModalProps) {
-  const handleSave = () => {
-    onClose();
+  const [username, setUsername] = useState(user.username);
+  const [recyclingPersona, setRecyclingPersona] = useState(user.recyclingPersona);
+  const [location, setLocation] = useState(user.location);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBadges();
+    }
+  }, [isOpen]);
+
+  const fetchBadges = async () => {
+    try {
+      const response = await fetch('/api/badges');
+      if (response.ok) {
+        const data = await response.json();
+        setBadges(data);
+      }
+    } catch (error) {
+      console.error('Error fetching badges:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/user/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          recyclingPersona,
+          location,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      const updatedUser = await response.json();
+
+      if (onSave) {
+        onSave({ username, recyclingPersona, location });
+      }
+
+      onClose();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,6 +139,17 @@ export default function EditProfileModal({
                 </svg>
               </motion.button>
             </div>
+
+            {error && (
+              <motion.div
+                className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {error}
+              </motion.div>
+            )}
+
             <motion.div
               className="space-y-4"
               initial={{ opacity: 0, y: 10 }}
@@ -80,50 +158,67 @@ export default function EditProfileModal({
             >
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name
+                  Username
                 </label>
                 <input
                   type="text"
-                  defaultValue={user.name}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Recycling Persona
                 </label>
-                <input
-                  type="text"
-                  defaultValue={user.recyclingPersona}
+                <select
+                  value={recyclingPersona}
+                  onChange={(e) => setRecyclingPersona(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                >
+                  <option value="">Select a persona...</option>
+                  {badges.map((badge) => (
+                    <option key={badge._id} value={badge.name}>
+                      {badge.emoji} {badge.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Choose from available badges you've earned
+                </p>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Location
                 </label>
                 <input
                   type="text"
-                  defaultValue={user.location}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
+
               <div className="flex gap-3 mt-6">
                 <motion.button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: loading ? 1 : 1.02 }}
+                  whileTap={{ scale: loading ? 1 : 0.98 }}
                 >
                   Cancel
                 </motion.button>
                 <motion.button
                   onClick={handleSave}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: loading ? 1 : 1.02 }}
+                  whileTap={{ scale: loading ? 1 : 0.98 }}
                 >
-                  Save Changes
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </motion.button>
               </div>
             </motion.div>
