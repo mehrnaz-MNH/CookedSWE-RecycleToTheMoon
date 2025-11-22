@@ -7,19 +7,15 @@ import RecycleCounter from "@/components/RecycleCounter";
 import BottleStack from "@/components/BottleStack";
 import BottomNav from "@/components/BottomNav";
 import DistanceAxis from "@/components/DistanceAxis";
+import { useStats, DEMO_USER_ID } from "../app/lib/hooks";
 
 type CounterType = "individual" | "group";
 
 export default function Home() {
   const [counterType, setCounterType] = useState<CounterType>("individual");
+  const { stats, loading } = useStats(DEMO_USER_ID);
 
-  // Mock data - will be replaced with MongoDB data later
-  const mockData = {
-    individual: 10532,
-    group: 25780,
-  };
-
-  const currentCount = mockData[counterType];
+  const currentCount = loading ? 5000 : stats[counterType] || 0;
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -52,7 +48,11 @@ export default function Home() {
 
             {/* Counter with Earth */}
             <div className="relative z-10 -mt-8">
-              <RecycleCounter count={currentCount} />
+              {loading ? (
+                <div className="text-white text-center">Loading...</div>
+              ) : (
+                <RecycleCounter count={currentCount} />
+              )}
             </div>
           </div>
         </main>

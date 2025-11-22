@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -10,7 +11,7 @@ import EditProfileModal from "@/app/components/EditProfileModal";
 import SettingsModal from "@/app/components/SettingsModal";
 import UploadReceiptModal from "@/app/components/UploadReceiptModal";
 import BottomNavigation from "@/app/components/BottomNavigation";
-import ViewSelector from "@/app/components/ViewSelector";
+import { useUser, useActivities, DEMO_USER_ID } from "../../app/lib/hooks";
 
 export default function ProfilePage() {
   const availableAvatars = [
@@ -20,7 +21,7 @@ export default function ProfilePage() {
     "🌳",
     "🌿",
     "🌺",
-    "🐝",
+    "🍃",
     "🦋",
     "🌻",
     "🌈",
@@ -28,41 +29,76 @@ export default function ProfilePage() {
     "🔥",
   ];
 
-  const [user, setUser] = useState({
-    name: "Alex Green",
-    avatar: "🌱",
-    recyclingPersona: "Eco Warrior",
-    location: "San Francisco, CA",
-  });
+  const { user, loading, updateUser } = useUser(DEMO_USER_ID);
+  const { activities, loading: activitiesLoading } = useActivities(
+    "user",
+    DEMO_USER_ID
+  );
 
-  const [currentView, setCurrentView] = useState("My Recycling");
-  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  const views = ["My Recycling", "Green Team Recycling", "City Recycling"];
-
-  const handleAvatarSelect = (avatar: string) => {
-    setUser({ ...user, avatar });
-    setIsAvatarModalOpen(false);
+  const handleAvatarSelect = async (avatar: string) => {
+    try {
+      await updateUser({ avatar });
+      setIsAvatarModalOpen(false);
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+    }
   };
 
-  const handleViewSelect = (view: string) => {
-    setCurrentView(view);
-    setIsViewDropdownOpen(false);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">
+          Loading profile...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">User not found</div>
+      </div>
+    );
+  }
+
+  const userProfile = {
+    name: user.username,
+    avatar: user.avatar,
+    recyclingPersona: user.recyclingPersona,
+    location: user.location,
   };
+
+  const stats = {
+    itemsRecycled: user.containerCount,
+    dayStreak: user.monthStreak * 30, // Approximate
+    co2Saved: user.co2Saved,
+  };
+
+  // Convert activities to the format expected by RecentActivity component
+  const recentActivities = activitiesLoading
+    ? []
+    : activities.slice(0, 5).map((activity: any) => ({
+        id: activity._id,
+        title: activity.content,
+        time: new Date(activity.datetime).toLocaleDateString(),
+        type: activity.type === "recycled" ? "recycling" : "achievement",
+      }));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20">
       <div className="max-w-md mx-auto px-4 py-6">
         <ProfileHeader
-          user={user}
+          user={userProfile}
           onEditAvatar={() => setIsAvatarModalOpen(true)}
         />
 
-        <StatsCards />
+        <StatsCards stats={stats} />
 
         <motion.div
           className="space-y-3"
@@ -109,7 +145,7 @@ export default function ProfilePage() {
           </motion.button>
         </motion.div>
 
-        <RecentActivity />
+        <RecentActivity activities={recentActivities} />
       </div>
 
       <AvatarSelectionModal
@@ -122,7 +158,7 @@ export default function ProfilePage() {
 
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
-        user={user}
+        user={userProfile}
         onClose={() => setIsEditProfileModalOpen(false)}
       />
 
