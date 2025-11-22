@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Search,
-  UserPlus,
-  Trophy,
-  TrendingUp,
-  Users,
-  Lightbulb,
-} from "lucide-react";
+import { Search, UserPlus, Trophy, Users, Lightbulb } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface LeaderboardUser {
