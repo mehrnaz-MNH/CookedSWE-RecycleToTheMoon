@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Hide navigation on login and root pages
-  const hideNav = pathname === "/login" || pathname === "/";
+  const hideNav = pathname === "/login" ;
 
   return (
     <>
