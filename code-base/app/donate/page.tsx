@@ -1,0 +1,181 @@
+"use client";
+
+import { useState } from "react";
+import { Users, Building2 } from "lucide-react";
+import { motion } from "framer-motion";
+import CoinBalance from "../components/CoinBalance";
+import TabButton from "../components/DonateTabButton";
+import FriendCard from "../components/FriendCard";
+import CharityCard from "../components/CharityCard";
+import DonateModal from "../components/DonateModal";
+
+interface Charity {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  totalDonations: number;
+}
+
+interface Friend {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+export default function DonatePage() {
+  const [activeTab, setActiveTab] = useState<"friends" | "charities">(
+    "friends"
+  );
+  const [showDonateModal, setShowDonateModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+  const [donationAmount, setDonationAmount] = useState(10);
+  const [availableCoins] = useState(82); // coins earned - coins donated
+
+  const friends: Friend[] = [
+    { id: "1", name: "Sarah Johnson", avatar: "🌟" },
+    { id: "2", name: "Mike Chen", avatar: "🚀" },
+    { id: "3", name: "Emma Davis", avatar: "💎" },
+    { id: "4", name: "John Smith", avatar: "⚡" },
+  ];
+
+  const charities: Charity[] = [
+    {
+      id: "1",
+      name: "Ocean Cleanup",
+      description: "Cleaning plastic from oceans and rivers worldwide",
+      icon: "🌊",
+      totalDonations: 15420,
+    },
+    {
+      id: "2",
+      name: "Plant Trees Initiative",
+      description: "Planting trees to combat climate change",
+      icon: "🌳",
+      totalDonations: 12850,
+    },
+    {
+      id: "3",
+      name: "Wildlife Conservation",
+      description: "Protecting endangered species and habitats",
+      icon: "🦁",
+      totalDonations: 10230,
+    },
+    {
+      id: "4",
+      name: "Clean Energy Fund",
+      description: "Supporting renewable energy projects",
+      icon: "⚡",
+      totalDonations: 8965,
+    },
+  ];
+
+  const handleDonate = () => {
+    // API call would go here
+    console.log(`Donating ${donationAmount} coins to`, selectedRecipient);
+    setShowDonateModal(false);
+    setDonationAmount(10);
+    setSelectedRecipient(null);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const openDonateModal = (recipient: any, type: "friend" | "charity") => {
+    setSelectedRecipient({ ...recipient, type });
+    setShowDonateModal(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-primary-darkNavy pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-pink-500 to-purple-600 p-6">
+        <h1 className="text-2xl font-bold text-white text-center mb-6">
+          Donate Coins
+        </h1>
+        <CoinBalance availableCoins={availableCoins} />
+      </div>
+
+      {/* Tab navigation */}
+      <div className="px-6 py-4 border-b border-white/10">
+        <div className="flex gap-2">
+          <TabButton
+            icon={Users}
+            label="Friends"
+            isActive={activeTab === "friends"}
+            onClick={() => setActiveTab("friends")}
+          />
+          <TabButton
+            icon={Building2}
+            label="Charities"
+            isActive={activeTab === "charities"}
+            onClick={() => setActiveTab("charities")}
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-6 py-6">
+        {/* Friends Tab */}
+        {activeTab === "friends" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="text-white/60 text-sm mb-6">
+              Support your friends by donating coins. Your generosity helps them
+              reach their recycling goals!
+            </p>
+
+            <div className="space-y-3">
+              {friends.map((friend, index) => (
+                <FriendCard
+                  key={friend.id}
+                  friend={friend}
+                  index={index}
+                  onDonate={() => openDonateModal(friend, "friend")}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Charities Tab */}
+        {activeTab === "charities" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <p className="text-white/60 text-sm mb-6">
+              Make a real-world impact by donating to verified environmental
+              charities.
+            </p>
+
+            <div className="space-y-4">
+              {charities.map((charity, index) => (
+                <CharityCard
+                  key={charity.id}
+                  charity={charity}
+                  index={index}
+                  onDonate={() => openDonateModal(charity, "charity")}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Donate Modal */}
+      <DonateModal
+        isOpen={showDonateModal}
+        onClose={() => setShowDonateModal(false)}
+        recipient={selectedRecipient}
+        donationAmount={donationAmount}
+        setDonationAmount={setDonationAmount}
+        availableCoins={availableCoins}
+        onDonate={handleDonate}
+      />
+    </div>
+  );
+}
