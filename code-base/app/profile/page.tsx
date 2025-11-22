@@ -56,16 +56,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20">
-      <div className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm flex items-center justify-end">
-        <ViewSelector
-          currentView={currentView}
-          views={views}
-          isOpen={isViewDropdownOpen}
-          onToggle={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
-          onSelectView={handleViewSelect}
-        />
-      </div>
-
       <div className="max-w-md mx-auto px-4 py-6">
         <ProfileHeader
           user={user}

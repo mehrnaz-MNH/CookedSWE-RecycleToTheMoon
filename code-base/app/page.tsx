@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import SpaceBackground from '@/components/SpaceBackground';
-import TypeDropdown from '@/components/TypeDropdown';
-import RecycleCounter from '@/components/RecycleCounter';
-import BottleStack from '@/components/BottleStack';
-import BottomNav from '@/components/BottomNav';
-import DistanceAxis from '@/components/DistanceAxis';
+import React, { useState } from "react";
+import SpaceBackground from "@/components/SpaceBackground";
+import TypeDropdown from "@/components/TypeDropdown";
+import RecycleCounter from "@/components/RecycleCounter";
+import BottleStack from "@/components/BottleStack";
+import BottomNav from "@/components/BottomNav";
+import DistanceAxis from "@/components/DistanceAxis";
 
-type CounterType = 'individual' | 'group';
+type CounterType = "individual" | "group";
 
 export default function Home() {
-  const [counterType, setCounterType] = useState<CounterType>('individual');
+  const [counterType, setCounterType] = useState<CounterType>("individual");
 
   // Mock data - will be replaced with MongoDB data later
   const mockData = {
@@ -56,9 +56,6 @@ export default function Home() {
             </div>
           </div>
         </main>
-
-        {/* Bottom navigation */}
-        <BottomNav />
       </div>
     </div>
   );
