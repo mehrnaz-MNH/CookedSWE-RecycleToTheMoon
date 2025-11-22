@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import ProfileHeader from "@/app/components/ProfileHeader";
 import StatsCards from "@/app/components/StatsCards";
@@ -11,9 +12,25 @@ import EditProfileModal from "@/app/components/EditProfileModal";
 import SettingsModal from "@/app/components/SettingsModal";
 import UploadReceiptModal from "@/app/components/UploadReceiptModal";
 import BottomNavigation from "@/app/components/BottomNavigation";
-import { useUser, useActivities, DEMO_USER_ID } from "../../app/lib/hooks";
+import { useUser, useActivities } from "../../app/lib/hooks";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get userId from localStorage
+    const storedUserId = localStorage.getItem("userId");
+    if (!storedUserId) {
+      // Not logged in, redirect to login
+      router.push("/login");
+    } else {
+      setUserId(storedUserId);
+    }
+  }, [router]);
+
+  // Don't fetch user data until we have a userId
+  const shouldFetch = userId !== null;
   const availableAvatars = [
     "🌱",
     "🌍",
@@ -29,10 +46,10 @@ export default function ProfilePage() {
     "🔥",
   ];
 
-  const { user, loading, updateUser } = useUser(DEMO_USER_ID);
+  const { user, loading, updateUser } = useUser(userId || "");
   const { activities, loading: activitiesLoading } = useActivities(
     "user",
-    DEMO_USER_ID
+    userId || ""
   );
 
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
@@ -49,7 +66,17 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('userId');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (!userId || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-gray-600 dark:text-gray-400">
@@ -98,6 +125,18 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20">
       <div className="max-w-md mx-auto px-4 py-6">
+        {/* Logout button in top right */}
+        <div className="flex justify-end mb-4">
+          <motion.button
+            onClick={handleLogout}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-md transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Logout
+          </motion.button>
+        </div>
+
         <ProfileHeader
           user={userProfile}
           onEditAvatar={() => setIsAvatarModalOpen(true)}
@@ -163,7 +202,7 @@ export default function ProfilePage() {
 
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
-        userId={DEMO_USER_ID}
+        userId={userId}
         user={userProfile}
         onClose={() => setIsEditProfileModalOpen(false)}
         onSave={async (updatedData) => {
@@ -173,7 +212,7 @@ export default function ProfilePage() {
 
       <SettingsModal
         isOpen={isSettingsModalOpen}
-        userId={DEMO_USER_ID}
+        userId={userId}
         settings={userSettings}
         onClose={() => setIsSettingsModalOpen(false)}
         onSave={async (updatedSettings) => {

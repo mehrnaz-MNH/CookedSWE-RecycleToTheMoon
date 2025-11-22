@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, userId, settings, onClose, onSave }: SettingsModalProps) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState(settings.notifications);
   const [privacy, setPrivacy] = useState(settings.privacy);
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,16 @@ export default function SettingsModal({ isOpen, userId, settings, onClose, onSav
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('userId');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
@@ -178,6 +190,18 @@ export default function SettingsModal({ isOpen, userId, settings, onClose, onSav
                   whileTap={{ scale: loading ? 1 : 0.98 }}
                 >
                   {loading ? 'Saving...' : 'Save Settings'}
+                </motion.button>
+              </div>
+
+              {/* Logout Button */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <motion.button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Logout
                 </motion.button>
               </div>
             </motion.div>
