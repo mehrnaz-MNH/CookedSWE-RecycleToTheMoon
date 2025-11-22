@@ -43,7 +43,7 @@ export default function Home() {
         </header>
 
         {/* Main counter area */}
-        <main className="flex-1 flex flex-col items-center justify-end pb-20 relative">
+        <main className="flex-1 flex flex-col items-center justify-end relative pb-12">
           <div className="relative w-full flex flex-col items-center">
             {/* Bottle stack */}
             <div className="relative z-20 mb-5">
