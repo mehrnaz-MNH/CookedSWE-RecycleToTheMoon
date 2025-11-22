@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import StatsCards from '@/components/profile/StatsCards';
 import RecentActivity from '@/components/profile/RecentActivity';
@@ -60,10 +61,17 @@ export default function ProfilePage() {
 
         <StatsCards />
 
-        <div className="space-y-3">
-          <button
+        <motion.div
+          className="space-y-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+        >
+          <motion.button
             onClick={() => setIsEditProfileModalOpen(true)}
             className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -74,11 +82,13 @@ export default function ProfilePage() {
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
             Edit Profile
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={() => setIsSettingsModalOpen(true)}
             className="w-full bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -93,8 +103,8 @@ export default function ProfilePage() {
               />
             </svg>
             Settings
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         <RecentActivity />
       </div>

@@ -1,22 +1,23 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { ReactNode } from 'react';
 
-interface AvatarSelectionModalProps {
+interface AnimatedModalProps {
   isOpen: boolean;
-  currentAvatar: string;
-  availableAvatars: string[];
   onClose: () => void;
-  onSelectAvatar: (avatar: string) => void;
+  title: string;
+  children: ReactNode;
+  maxWidth?: string;
 }
 
-export default function AvatarSelectionModal({
+export default function AnimatedModal({
   isOpen,
-  currentAvatar,
-  availableAvatars,
   onClose,
-  onSelectAvatar,
-}: AvatarSelectionModalProps) {
+  title,
+  children,
+  maxWidth = 'max-w-md'
+}: AnimatedModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -28,21 +29,21 @@ export default function AvatarSelectionModal({
           onClick={onClose}
         >
           <motion.div
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6"
+            className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl ${maxWidth} w-full p-6 max-h-[90vh] overflow-y-auto`}
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <motion.h3
                 className="text-xl font-bold text-gray-900 dark:text-white"
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
               >
-                Choose Avatar
+                {title}
               </motion.h3>
               <motion.button
                 onClick={onClose}
@@ -67,40 +68,11 @@ export default function AvatarSelectionModal({
               </motion.button>
             </div>
             <motion.div
-              className="grid grid-cols-4 gap-3"
-              initial="hidden"
-              animate="show"
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.05,
-                    delayChildren: 0.1
-                  }
-                }
-              }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
             >
-              {availableAvatars.map((avatar) => (
-                <motion.button
-                  key={avatar}
-                  onClick={() => onSelectAvatar(avatar)}
-                  className={`aspect-square rounded-xl flex items-center justify-center text-4xl transition-all ${
-                    currentAvatar === avatar
-                      ? 'bg-green-100 dark:bg-green-900 ring-2 ring-green-600'
-                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                  variants={{
-                    hidden: { scale: 0, rotate: -180 },
-                    show: { scale: 1, rotate: 0 }
-                  }}
-                  whileHover={{ scale: 1.15, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  {avatar}
-                </motion.button>
-              ))}
+              {children}
             </motion.div>
           </motion.div>
         </motion.div>
