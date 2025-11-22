@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import ProfileHeader from "@/app/components/ProfileHeader";
 import StatsCards from "@/app/components/StatsCards";
 import RecentActivity from "@/app/components/RecentActivity";
 import AvatarSelectionModal from "@/app/components/AvatarSelectionModal";
 import EditProfileModal from "@/app/components/EditProfileModal";
 import SettingsModal from "@/app/components/SettingsModal";
+import UploadReceiptModal from "@/app/components/UploadReceiptModal";
+import BottomNavigation from "@/app/components/BottomNavigation";
+import ViewSelector from "@/app/components/ViewSelector";
 
 export default function ProfilePage() {
   const availableAvatars = [
@@ -31,17 +35,37 @@ export default function ProfilePage() {
     location: "San Francisco, CA",
   });
 
+  const [currentView, setCurrentView] = useState("My Recycling");
+  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const views = ["My Recycling", "Green Team Recycling", "City Recycling"];
 
   const handleAvatarSelect = (avatar: string) => {
     setUser({ ...user, avatar });
     setIsAvatarModalOpen(false);
   };
 
+  const handleViewSelect = (view: string) => {
+    setCurrentView(view);
+    setIsViewDropdownOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20">
+      <div className="bg-white dark:bg-gray-800 px-4 py-3 shadow-sm flex items-center justify-end">
+        <ViewSelector
+          currentView={currentView}
+          views={views}
+          isOpen={isViewDropdownOpen}
+          onToggle={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+          onSelectView={handleViewSelect}
+        />
+      </div>
+
       <div className="max-w-md mx-auto px-4 py-6">
         <ProfileHeader
           user={user}
@@ -50,10 +74,17 @@ export default function ProfilePage() {
 
         <StatsCards />
 
-        <div className="space-y-3">
-          <button
+        <motion.div
+          className="space-y-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+        >
+          <motion.button
             onClick={() => setIsEditProfileModalOpen(true)}
             className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -64,11 +95,13 @@ export default function ProfilePage() {
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
             Edit Profile
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={() => setIsSettingsModalOpen(true)}
             className="w-full bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -83,31 +116,37 @@ export default function ProfilePage() {
               />
             </svg>
             Settings
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         <RecentActivity />
-
-        {/* Modals */}
-        <AvatarSelectionModal
-          isOpen={isAvatarModalOpen}
-          currentAvatar={user.avatar}
-          availableAvatars={availableAvatars}
-          onClose={() => setIsAvatarModalOpen(false)}
-          onSelectAvatar={handleAvatarSelect}
-        />
-
-        <EditProfileModal
-          isOpen={isEditProfileModalOpen}
-          user={user}
-          onClose={() => setIsEditProfileModalOpen(false)}
-        />
-
-        <SettingsModal
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-        />
       </div>
+
+      <AvatarSelectionModal
+        isOpen={isAvatarModalOpen}
+        currentAvatar={user.avatar}
+        availableAvatars={availableAvatars}
+        onClose={() => setIsAvatarModalOpen(false)}
+        onSelectAvatar={handleAvatarSelect}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileModalOpen}
+        user={user}
+        onClose={() => setIsEditProfileModalOpen(false)}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
+
+      <UploadReceiptModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
+
+      <BottomNavigation onUploadClick={() => setIsUploadModalOpen(true)} />
     </div>
   );
 }
