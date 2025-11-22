@@ -68,10 +68,15 @@ export default function ProfilePage() {
   }
 
   const userProfile = {
-    name: user.username,
+    username: user.username,
     avatar: user.avatar,
     recyclingPersona: user.recyclingPersona,
     location: user.location,
+  };
+
+  const userSettings = {
+    notifications: user.profileSettings?.notifications ?? true,
+    privacy: user.profileSettings?.privacy ?? 'public',
   };
 
   const stats = {
@@ -158,13 +163,22 @@ export default function ProfilePage() {
 
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
+        userId={DEMO_USER_ID}
         user={userProfile}
         onClose={() => setIsEditProfileModalOpen(false)}
+        onSave={async (updatedData) => {
+          await updateUser(updatedData);
+        }}
       />
 
       <SettingsModal
         isOpen={isSettingsModalOpen}
+        userId={DEMO_USER_ID}
+        settings={userSettings}
         onClose={() => setIsSettingsModalOpen(false)}
+        onSave={async (updatedSettings) => {
+          await updateUser({ profileSettings: updatedSettings });
+        }}
       />
 
       <UploadReceiptModal

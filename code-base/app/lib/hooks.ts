@@ -17,10 +17,10 @@ export function useUser(userId: string = DEMO_USER_ID) {
   const fetchUser = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/user?userId=${userId}`);
+      const response = await fetch(`/api/user/${userId}`);
       const data = await response.json();
       if (response.ok) {
-        setUser(data.user);
+        setUser(data);
       } else {
         setError(data.error);
       }
@@ -33,15 +33,15 @@ export function useUser(userId: string = DEMO_USER_ID) {
 
   const updateUser = async (updates: any) => {
     try {
-      const response = await fetch("/api/user", {
-        method: "PUT",
+      const response = await fetch(`/api/user/${userId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, updates }),
+        body: JSON.stringify(updates),
       });
       const data = await response.json();
       if (response.ok) {
-        setUser(data.user);
-        return data.user;
+        setUser(data);
+        return data;
       } else {
         throw new Error(data.error);
       }
