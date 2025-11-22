@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 
 // Hardcoded user ID for demo - replace with auth in production
-export const DEMO_USER_ID = "692128930b3bb37db9864c1c";
+export const DEMO_USER_ID = "6921395c7b3fa4d1e8ad6ede";
 
-// User hooks
 export function useUser(userId: string = DEMO_USER_ID) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -254,11 +253,9 @@ export function useLeaderboard(
 
 // Donations hooks
 export function useDonations(userId: string = DEMO_USER_ID) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createDonation = async (donationData: any) => {
     try {
       setLoading(true);
@@ -282,4 +279,51 @@ export function useDonations(userId: string = DEMO_USER_ID) {
   };
 
   return { donations, loading, createDonation };
+}
+
+// Friends hooks
+export function useFriends(userId: string = DEMO_USER_ID) {
+  const [friends, setFriends] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFriends();
+  }, [userId]);
+
+  const fetchFriends = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/user?userId=${userId}`);
+      const data = await response.json();
+      if (response.ok && data.user) {
+        setFriends(data.user.friends || []);
+      }
+    } catch (err) {
+      console.error("Error fetching friends:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addFriend = async (friendId: string) => {
+    try {
+      const response = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, friendId }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await fetchFriends();
+        return data;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error("Error adding friend:", err);
+      throw err;
+    }
+  };
+
+  return { friends, loading, addFriend, refetch: fetchFriends };
 }

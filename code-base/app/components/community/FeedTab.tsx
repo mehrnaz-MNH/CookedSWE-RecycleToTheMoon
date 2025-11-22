@@ -1,69 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { motion } from "framer-motion";
-
-interface Activity {
-  id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  type: "recycled" | "achievement" | "joined_group" | "challenge";
-  content: string;
-  group?: string;
-  time: string;
-  stats?: {
-    items?: number;
-    points?: number;
-  };
-}
-
-const mockActivities: Activity[] = [
-  {
-    id: "1",
-    user: { name: "Sarah Chen", avatar: "🌸" },
-    type: "recycled",
-    content: "recycled 15 plastic bottles",
-    group: "Green Team",
-    time: "2 hours ago",
-    stats: { items: 15, points: 45 },
-  },
-  {
-    id: "2",
-    user: { name: "Mike Johnson", avatar: "🌳" },
-    type: "achievement",
-    content: "earned the Eco Champion badge",
-    time: "3 hours ago",
-    stats: { points: 100 },
-  },
-  {
-    id: "3",
-    user: { name: "Emma Wilson", avatar: "🌺" },
-    type: "joined_group",
-    content: "joined Ocean Savers",
-    group: "Ocean Savers",
-    time: "5 hours ago",
-  },
-  {
-    id: "4",
-    user: { name: "Alex Green", avatar: "🌱" },
-    type: "challenge",
-    content: "completed the Weekly Challenge",
-    group: "Green Team",
-    time: "Yesterday",
-    stats: { points: 250 },
-  },
-  {
-    id: "5",
-    user: { name: "Lisa Park", avatar: "🦋" },
-    type: "recycled",
-    content: "recycled 8 aluminum cans",
-    time: "Yesterday",
-    stats: { items: 8, points: 24 },
-  },
-];
+import { useActivities, DEMO_USER_ID } from "../../lib/hooks";
 
 export default function FeedTab() {
+  const { activities, loading } = useActivities("public", DEMO_USER_ID);
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -79,7 +22,7 @@ export default function FeedTab() {
     show: { y: 0, opacity: 1 },
   };
 
-  const getActivityIcon = (type: Activity["type"]) => {
+  const getActivityIcon = (type: string) => {
     switch (type) {
       case "recycled":
         return "♻️";
@@ -87,14 +30,14 @@ export default function FeedTab() {
         return "🏆";
       case "joined_group":
         return "👥";
-      case "challenge":
+      case "challenge_completed":
         return "🎯";
       default:
         return "📝";
     }
   };
 
-  const getActivityColor = (type: Activity["type"]) => {
+  const getActivityColor = (type: string) => {
     switch (type) {
       case "recycled":
         return "bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-800";
@@ -102,12 +45,48 @@ export default function FeedTab() {
         return "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800";
       case "joined_group":
         return "bg-blue-100 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800";
-      case "challenge":
+      case "challenge_completed":
         return "bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800";
       default:
         return "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700";
     }
   };
+
+  const formatTime = (datetime: string) => {
+    const date = new Date(datetime);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInHours < 48) return "Yesterday";
+    return date.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500 dark:text-gray-400">
+          Loading activities...
+        </div>
+      </div>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400 mb-2">
+          No activities yet
+        </p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">
+          Start recycling to see activities here!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -125,9 +104,9 @@ export default function FeedTab() {
         initial="hidden"
         animate="show"
       >
-        {mockActivities.map((activity) => (
+        {activities.map((activity: any) => (
           <motion.div
-            key={activity.id}
+            key={activity._id}
             variants={item}
             whileHover={{ scale: 1.02, x: 5 }}
             className={`rounded-xl p-4 border ${getActivityColor(
@@ -137,7 +116,9 @@ export default function FeedTab() {
             <div className="flex items-start gap-3">
               {/* User Avatar */}
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                <span className="text-2xl">{activity.user.avatar}</span>
+                <span className="text-2xl">
+                  {activity.userId?.avatar || "🌱"}
+                </span>
               </div>
 
               {/* Content */}
@@ -145,12 +126,14 @@ export default function FeedTab() {
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {activity.user.name}
+                      {activity.userId?.username || "User"}
                     </span>
-                    <span className="text-xl">{getActivityIcon(activity.type)}</span>
+                    <span className="text-xl">
+                      {getActivityIcon(activity.type)}
+                    </span>
                   </div>
                   <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {activity.time}
+                    {formatTime(activity.datetime)}
                   </span>
                 </div>
 
@@ -159,9 +142,9 @@ export default function FeedTab() {
                 </p>
 
                 {/* Group Badge */}
-                {activity.group && (
+                {activity.groupId && (
                   <span className="inline-block px-2 py-1 bg-white/60 dark:bg-black/20 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    👥 {activity.group}
+                    👥 {activity.groupId?.name || "Group"}
                   </span>
                 )}
 
@@ -185,18 +168,6 @@ export default function FeedTab() {
           </motion.div>
         ))}
       </motion.div>
-
-      {/* Load More Button */}
-      <motion.button
-        className="w-full mt-6 py-3 px-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg shadow-md transition-colors border border-gray-200 dark:border-gray-700"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        Load More
-      </motion.button>
     </div>
   );
 }

@@ -1,116 +1,85 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-
-interface Group {
-  id: string;
-  name: string;
-  avatar: string;
-  members: number;
-  description: string;
-  isJoined: boolean;
-}
-
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-  recyclingPersona: string;
-  itemsRecycled: number;
-  isFriend: boolean;
-}
-
-const mockGroups: Group[] = [
-  {
-    id: "1",
-    name: "Ocean Savers",
-    avatar: "🌊",
-    members: 248,
-    description: "Dedicated to cleaning beaches and reducing ocean plastic",
-    isJoined: false,
-  },
-  {
-    id: "2",
-    name: "Green Team",
-    avatar: "🌿",
-    members: 189,
-    description: "Local community focusing on neighborhood recycling",
-    isJoined: true,
-  },
-  {
-    id: "3",
-    name: "Eco Warriors",
-    avatar: "⚡",
-    members: 312,
-    description: "Champions of sustainable living and zero waste",
-    isJoined: false,
-  },
-  {
-    id: "4",
-    name: "Planet Protectors",
-    avatar: "🌍",
-    members: 156,
-    description: "Global community fighting climate change",
-    isJoined: false,
-  },
-];
-
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Jordan Lee",
-    avatar: "🌻",
-    recyclingPersona: "Sustainability Guru",
-    itemsRecycled: 456,
-    isFriend: false,
-  },
-  {
-    id: "2",
-    name: "Taylor Smith",
-    avatar: "🌈",
-    recyclingPersona: "Green Champion",
-    itemsRecycled: 389,
-    isFriend: false,
-  },
-  {
-    id: "3",
-    name: "Casey Brown",
-    avatar: "🍃",
-    recyclingPersona: "Eco Enthusiast",
-    itemsRecycled: 312,
-    isFriend: true,
-  },
-  {
-    id: "4",
-    name: "Morgan Davis",
-    avatar: "🌼",
-    recyclingPersona: "Recycling Pro",
-    itemsRecycled: 298,
-    isFriend: false,
-  },
-];
+import { useGroups, useFriends, DEMO_USER_ID } from "../../lib/hooks";
 
 export default function DiscoverTab() {
-  const [discoverType, setDiscoverType] = useState<"groups" | "friends">("groups");
-  const [groups, setGroups] = useState(mockGroups);
-  const [users, setUsers] = useState(mockUsers);
+  const [discoverType, setDiscoverType] = useState<"groups" | "friends">(
+    "groups"
+  );
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleJoinGroup = (groupId: string) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId ? { ...group, isJoined: !group.isJoined } : group
-      )
-    );
+  // Fetch groups from database
+  const { groups, loading: groupsLoading, joinGroup } = useGroups("all");
+  const { friends, loading: friendsLoading, addFriend } = useFriends(DEMO_USER_ID);
+
+  const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
+  const [addingFriendId, setAddingFriendId] = useState<string | null>(null);
+
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      setJoiningGroupId(groupId);
+      await joinGroup(groupId, DEMO_USER_ID);
+      alert("Successfully joined the group!");
+    } catch (error) {
+      console.error("Error joining group:", error);
+      alert("Failed to join group. Please try again.");
+    } finally {
+      setJoiningGroupId(null);
+    }
   };
 
-  const handleAddFriend = (userId: string) => {
-    setUsers(
-      users.map((user) =>
-        user.id === userId ? { ...user, isFriend: !user.isFriend } : user
-      )
-    );
+  const handleAddFriend = async (friendId: string) => {
+    try {
+      setAddingFriendId(friendId);
+      await addFriend(friendId);
+      alert("Successfully added friend!");
+    } catch (error) {
+      console.error("Error adding friend:", error);
+      alert("Failed to add friend. Please try again.");
+    } finally {
+      setAddingFriendId(null);
+    }
   };
+
+  // Filter groups based on search query
+  const filteredGroups = groups.filter(
+    (group: any) =>
+      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Mock friends for now (you can implement friends API later)
+  const mockUsers =
+    friends.length > 0
+      ? friends.map((friend: any) => ({
+          id: friend._id,
+          name: friend.username,
+          avatar: friend.avatar,
+          recyclingPersona: friend.recyclingPersona,
+          itemsRecycled: friend.containerCount || 0,
+          isFriend: true,
+        }))
+      : [
+          {
+            id: "1",
+            name: "Jordan Lee",
+            avatar: "🌻",
+            recyclingPersona: "Sustainability Guru",
+            itemsRecycled: 456,
+            isFriend: false,
+          },
+          {
+            id: "2",
+            name: "Taylor Smith",
+            avatar: "🌈",
+            recyclingPersona: "Green Champion",
+            itemsRecycled: 389,
+            isFriend: false,
+          },
+        ];
 
   const container = {
     hidden: { opacity: 0 },
@@ -126,6 +95,8 @@ export default function DiscoverTab() {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1 },
   };
+
+  const loading = discoverType === "groups" ? groupsLoading : friendsLoading;
 
   return (
     <div>
@@ -167,6 +138,8 @@ export default function DiscoverTab() {
           <input
             type="text"
             placeholder={`Search ${discoverType}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 pl-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -175,100 +148,126 @@ export default function DiscoverTab() {
         </div>
       </motion.div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-gray-500 dark:text-gray-400">
+            Loading {discoverType}...
+          </div>
+        </div>
+      )}
+
       {/* Content */}
-      <motion.div
-        className="space-y-4"
-        variants={container}
-        initial="hidden"
-        animate="show"
-        key={discoverType}
-      >
-        {discoverType === "groups"
-          ? groups.map((group) => (
-              <motion.div
-                key={group.id}
-                variants={item}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Group Avatar */}
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-3xl">{group.avatar}</span>
-                  </div>
+      {!loading && (
+        <motion.div
+          className="space-y-4"
+          variants={container}
+          initial="hidden"
+          animate="show"
+          key={discoverType}
+        >
+          {discoverType === "groups"
+            ? filteredGroups.map((group: any) => (
+                <motion.div
+                  key={group._id}
+                  variants={item}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Group Avatar */}
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="text-3xl">{group.avatar || "♻️"}</span>
+                    </div>
 
-                  {/* Group Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
-                      {group.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {group.description}
-                    </p>
-                    <span className="text-xs text-gray-500 dark:text-gray-500">
-                      👥 {group.members} members
-                    </span>
-                  </div>
+                    {/* Group Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
+                        {group.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {group.description || "No description"}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                        <span>👥 {group.members?.length || 0} members</span>
+                        <span>⭐ {group.points || 0} points</span>
+                      </div>
+                    </div>
 
-                  {/* Join Button */}
-                  <motion.button
-                    onClick={() => handleJoinGroup(group.id)}
-                    className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
-                      group.isJoined
-                        ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                        : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {group.isJoined ? "Joined" : "Join"}
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))
-          : users.map((user) => (
-              <motion.div
-                key={user.id}
-                variants={item}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-center gap-4">
-                  {/* User Avatar */}
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-2xl">{user.avatar}</span>
+                    {/* Join Button */}
+                    <motion.button
+                      onClick={() => handleJoinGroup(group._id)}
+                      disabled={joiningGroupId === group._id}
+                      className="px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {joiningGroupId === group._id ? "Joining..." : "Join"}
+                    </motion.button>
                   </div>
+                </motion.div>
+              ))
+            : mockUsers.map((user: any) => (
+                <motion.div
+                  key={user.id}
+                  variants={item}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-center gap-4">
+                    {/* User Avatar */}
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="text-2xl">{user.avatar}</span>
+                    </div>
 
-                  {/* User Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                      {user.name}
-                    </h3>
-                    <p className="text-sm text-green-600 dark:text-green-400 mb-1">
-                      {user.recyclingPersona}
-                    </p>
-                    <span className="text-xs text-gray-500 dark:text-gray-500">
-                      ♻️ {user.itemsRecycled} items recycled
-                    </span>
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+                        {user.name}
+                      </h3>
+                      <p className="text-sm text-green-600 dark:text-green-400 mb-1">
+                        {user.recyclingPersona}
+                      </p>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        ♻️ {user.itemsRecycled} items recycled
+                      </span>
+                    </div>
+
+                    {/* Add Friend Button */}
+                    <motion.button
+                      onClick={() => !user.isFriend && handleAddFriend(user.id)}
+                      disabled={user.isFriend || addingFriendId === user.id}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
+                        user.isFriend
+                          ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          : "bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {addingFriendId === user.id
+                        ? "Adding..."
+                        : user.isFriend
+                        ? "Friends"
+                        : "Add Friend"}
+                    </motion.button>
                   </div>
+                </motion.div>
+              ))}
+        </motion.div>
+      )}
 
-                  {/* Add Friend Button */}
-                  <motion.button
-                    onClick={() => handleAddFriend(user.id)}
-                    className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-colors ${
-                      user.isFriend
-                        ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                        : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {user.isFriend ? "Friends" : "Add Friend"}
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
-      </motion.div>
+      {/* Empty State */}
+      {!loading && filteredGroups.length === 0 && discoverType === "groups" && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            No groups found
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            Try a different search term
+          </p>
+        </div>
+      )}
 
       {/* Suggestions Header */}
       <motion.div
